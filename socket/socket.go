@@ -42,6 +42,11 @@ func (sock *Socket) AcceptSocket() (int, syscall.Sockaddr, error) {
 	return syscall.Accept(sock.fd)
 }
 
+func (sock *Socket) CloseSocket() error {
+	return syscall.Close(sock.fd)
+}
+
+/*
 func (sock *Socket) GetFD() int {
 	return sock.fd
 }
@@ -49,3 +54,4 @@ func (sock *Socket) GetFD() int {
 func (sock *Socket) GetSockaddr() syscall.SockaddrInet4 {
 	return sock.sockaddr
 }
+*/

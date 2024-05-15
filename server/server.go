@@ -2,6 +2,8 @@ package server
 
 import (
 	"errors"
+	"os"
+	"os/signal"
 	"syscall"
 
 	"github.com/bryanwsebaraj/httpserver/socket"
@@ -19,6 +21,7 @@ func ListenAndServe(port uint16, addr uint32, bcklog int) error {
 		println("create failed")
 		return err
 	}
+	//sock.CloseSocket()
 
 	err = sock.BindSocket()
 	if err != nil {
@@ -32,9 +35,27 @@ func ListenAndServe(port uint16, addr uint32, bcklog int) error {
 		return err
 	}
 
+	//ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	//	defer stop()
+
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		<-done
+		println("stopping server")
+
+		// close socket
+		err = sock.CloseSocket()
+		if err != nil {
+			println("close failed")
+			return
+		}
+		//os.Exit(0)
+	}()
+
 	for {
 		// accept connection
-		println("accepting connection on port", sock.GetSockaddr().Port)
+		println("accepting connection on port", port)
 		newFd, _, err := sock.AcceptSocket()
 		if err != nil {
 			println("accept failed")
@@ -42,24 +63,22 @@ func ListenAndServe(port uint16, addr uint32, bcklog int) error {
 		}
 		println("new connection accepted")
 
-		//go func(newFd int) {
-		// FILEPATH: /Users/bryansebaraj/Workspace/HTTPserver/server/server.go
-		buffer := make([]byte, 10000)
-		valread, err := syscall.Read(newFd, buffer)
-		if err != nil {
-			println("read failed")
-			return err
-		}
-		for i := 0; i < valread; i++ {
-			print(string(buffer[i]))
-		}
-		syscall.Write(newFd, []byte("HTTP/1.1 200 OK\nContent-Type: text/html\n\n<h1>Hello, World!</h1>"))
-		println("response sent")
-		syscall.Close(newFd)
-		//}(newFd)
+		go func(newFd int) {
+			// FILEPATH: /Users/bryansebaraj/Workspace/HTTPserver/server/server.go
+			buffer := make([]byte, 10000)
+			valread, err := syscall.Read(newFd, buffer)
+			if err != nil {
+				println("read failed")
+				return //err
+			}
+			for i := 0; i < valread; i++ {
+				print(string(buffer[i]))
+			}
+			syscall.Write(newFd, []byte("HTTP/1.1 200 OK\nContent-Type: text/html\n\n<h1>Hello, World!</h1>"))
+			println("response sent")
+			syscall.Close(newFd)
+		}(newFd)
+		//syscall.Close(newFd)
 
 	}
-	// close connection
-	return nil
-
 }

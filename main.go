@@ -10,7 +10,8 @@ import (
 func main() {
 	ip := net.ParseIP("127.0.0.1")
 	ipUint32 := binary.BigEndian.Uint32(ip.To4())
+	println("http server on!")
 	server.ListenAndServe(9954, ipUint32, 10)
-	println("http server created!")
+	println("http server off!")
 
 }
