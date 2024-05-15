@@ -39,46 +39,71 @@ func ListenAndServe(port uint16, addr uint32, bcklog int) error {
 	//	defer stop()
 
 	done := make(chan os.Signal, 1)
-	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)
-	go func() {
+	exitFlag := false
+	signal.Notify(done, os.Interrupt)
+
+	go func(sock *socket.Socket) {
+		//println("waiting to stop")
 		<-done
-		println("stopping server")
+		exitFlag = true
+		sock.CloseSocket()
+		//print("closed socket ctrlc")
+		return
+	}(sock)
 
-		// close socket
-		err = sock.CloseSocket()
-		if err != nil {
-			println("close failed")
-			return
-		}
-		//os.Exit(0)
-	}()
-
+out:
 	for {
+		if exitFlag {
+			break out
+		}
 		// accept connection
-		println("accepting connection on port", port)
 		newFd, _, err := sock.AcceptSocket()
 		if err != nil {
-			println("accept failed")
+			//println("accept failed")
+			//println(newFd)
+			//println(sock.GetFD())
+			sock.CloseSocket()
+			//println("closed socket from err")
 			return err
 		}
-		println("new connection accepted")
-
-		go func(newFd int) {
-			// FILEPATH: /Users/bryansebaraj/Workspace/HTTPserver/server/server.go
-			buffer := make([]byte, 10000)
-			valread, err := syscall.Read(newFd, buffer)
-			if err != nil {
-				println("read failed")
-				return //err
-			}
-			for i := 0; i < valread; i++ {
-				print(string(buffer[i]))
-			}
-			syscall.Write(newFd, []byte("HTTP/1.1 200 OK\nContent-Type: text/html\n\n<h1>Hello, World!</h1>"))
-			println("response sent")
-			syscall.Close(newFd)
-		}(newFd)
-		//syscall.Close(newFd)
+		//println("new connection accepted")
+		go handleRequest(newFd)
 
 	}
+	//sock.CloseSocket()
+	//println("closed socket at end")
+	return nil
+
+}
+
+func handleRequest(newFd int) {
+	// in the future, handle persistent connections (keep-alive). currently closing after every response (HTTP 1.0)
+	// convert this to loop to read until end, not just 10000
+	buffer := make([]byte, 10000)
+	valread, err := syscall.Read(newFd, buffer)
+	if err != nil {
+		println("read failed")
+		return //err
+	}
+	for i := 0; i < valread; i++ {
+		print(string(buffer[i]))
+	}
+	syscall.Write(newFd, []byte("HTTP/1.1 200 OK\nContent-Type: text/html\n\n<h1>Hello, World!</h1>"))
+	syscall.Close(newFd)
+}
+
+type Request struct {
+	Method  int // HttpMethod
+	URI     string
+	Version string
+	Headers map[string]string
+	Body    string
+}
+
+type Response struct {
+	Version    string
+	StatusCode uint16
+	StatusText string
+	Headers    map[string]string
+	Body       string
 }

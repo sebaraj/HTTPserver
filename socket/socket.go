@@ -14,6 +14,7 @@ func (sock *Socket) CreateSocket(dom int, serv int, protoc int, port uint16, add
 	var err error
 
 	// socket address/port
+	// arm is little endian, network is big endian. addr is already converted to big endian before passed. port needs htonl/htons?
 	sock.sockaddr.Addr = [4]byte{byte(addr >> 24 & 0xFF), byte(addr >> 16 & 0xFF), byte(addr >> 8 & 0xFF), byte(addr & 0xFF)}
 	sock.sockaddr.Port = int(port)
 	sock.backlog = bcklog
@@ -46,7 +47,6 @@ func (sock *Socket) CloseSocket() error {
 	return syscall.Close(sock.fd)
 }
 
-/*
 func (sock *Socket) GetFD() int {
 	return sock.fd
 }
@@ -54,4 +54,3 @@ func (sock *Socket) GetFD() int {
 func (sock *Socket) GetSockaddr() syscall.SockaddrInet4 {
 	return sock.sockaddr
 }
-*/

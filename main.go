@@ -2,16 +2,28 @@ package main
 
 import (
 	"encoding/binary"
+	"log"
 	"net"
+	"os"
+
+	"strconv"
 
 	"github.com/bryanwsebaraj/httpserver/server"
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	ip := net.ParseIP("127.0.0.1")
-	ipUint32 := binary.BigEndian.Uint32(ip.To4())
+	var err error
+	err = godotenv.Load()
+	if err != nil {
+		log.Fatalf("Cannot load env. Through %v", err)
+	}
+	ip := binary.BigEndian.Uint32(net.ParseIP(os.Getenv("IP_ADDRESS")).To4())
+	port, _ := strconv.ParseInt(os.Getenv("PORT"), 0, 16)
 	println("http server on!")
-	server.ListenAndServe(9954, ipUint32, 10)
-	println("http server off!")
+
+	server.ListenAndServe(uint16(port), ip, 10)
+
+	println("\nhttp server off!")
 
 }
