@@ -4,7 +4,9 @@ import (
 	"errors"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
+	"time"
 
 	"github.com/bryanwsebaraj/httpserver/socket"
 )
@@ -19,7 +21,7 @@ func AboutHandler(req *Request) *Response {
 		Version:    req.Version,
 		StatusCode: OK,
 		StatusText: "OK",
-		Headers:    map[string]string{"Content-Type": "text/html"},
+		Headers:    map[string]string{"Content-Type": "text/html", "Date": time.Now().String()},
 		Body:       "<h1>About</h1>",
 	}
 
@@ -108,6 +110,7 @@ out:
 		// accept connection
 		newFd, _, err := s.Socket.AcceptSocket()
 		if err != nil {
+			// handle this better so it doesn't always close the socket/server unless desired
 			//println("accept failed")
 			//println(newFd)
 			//println(sock.GetFD())
@@ -146,7 +149,7 @@ func handleRequest(newFd int, routes map[Route]RouteHandler) {
 	bufferOut := parseResponse(res)
 	//res = []byte(res)
 	println("sending response:")
-	for i := 0; i < 30; i++ {
+	for i := 0; i < len(bufferOut); i++ {
 		print(string(bufferOut[i]))
 	}
 	syscall.Write(newFd, bufferOut)
@@ -157,21 +160,101 @@ func parseResponse(res *Response) []byte {
 	//bufferOut := make([]byte, 10000)
 	// write response
 	// strconv.FormatUint((uint64(res.StatusCode)), 3)
-	bufferOut := []byte(res.Version + " " + "200" + " " + res.StatusText + "\n" + "Content-Type: text/html\n\n" + res.Body + "\n")
+	//println(res.Version)
+	// figure out res.Version and print all headers
+	headersString := ""
+	for key, value := range res.Headers {
+		headersString += key + ": " + value + "\n"
+	}
+
+	bufferOut := []byte("HTTP/1.0 " + "200" + " " + res.StatusText + "\n" + headersString + "\n" + res.Body + "\n")
+
 	//bufferOut = []byte("HTTP/1.1 200 OK\nContent-Type: text/html\n\n<h1>Hello, World!</h1>")
 	//bufferOut = append(bufferOut, []byte(res.Version+" "+string(res.StatusCode)+" "+res.StatusText+"\r\n")+[]byte("Content-Type: "+res.Headers["Content-Type"]+"\r\n")+[]byte("Content-Length: "+string(len(res.Body))+"\r\n\r\n")+[]byte(res.Body)+"\r\n") // add headers
 	return bufferOut
 }
 
+func getHttpMethod(method string) HttpMethod {
+	switch method {
+	case "GET":
+		return GET
+	case "POST":
+		return POST
+	case "PUT":
+		return PUT
+	case "DELETE":
+		return DELETE
+	default:
+		return GET
+	}
+
+}
+
 func parseRequest(buffer []byte) *Request {
-	// parse request
 	req := new(Request)
-	// parse method
-	req.Method = GET
-	req.URI = "/about"
-	req.Version = "HTTP/1.1"
-	req.Headers = map[string]string{"Content-Type": "text/html"}
-	req.Body = "<h1></h1>"
+	firstRow := strings.Split(string(buffer), "\n")[0]
+
+	req.Method = getHttpMethod(strings.Split(firstRow, " ")[0])
+	req.URI = strings.Split(firstRow, " ")[1]
+	req.Version = strings.Split(firstRow, " ")[2]
+
+	//req.Method = GET
+	//req.URI = "/about"
+	//req.Version = "HTTP/1.1"
+
+	// parse headers
+
+	req.Headers = map[string]string{}
+	req.Body = map[string]string{}
+
+	inBody := false
+	count := 0
+	for _, line := range strings.Split(string(buffer), "\n")[1:] {
+		count++
+		if line == "\r" {
+			break
+		} else {
+			header := strings.Split(line, ": ")
+			println(header[0] + ": " + header[1])
+			req.Headers[header[0]] = header[1]
+		}
+	}
+	count++
+
+	// naive implementation, but it works for now for json. update later
+	if count < len(strings.Split(string(buffer), "\n")) {
+		// theres a body
+		for _, line := range strings.Split(string(buffer), "\n")[count:] {
+			if line == "\r" {
+				break
+			}
+			lineTrimmed := strings.TrimLeft(line, " ")
+			if string(lineTrimmed[0]) == "{" {
+				inBody = true
+				println("in body")
+			} else if string(lineTrimmed[0]) == "}" {
+				break
+			} else if inBody {
+				body := strings.Split(string(lineTrimmed), ": ")
+				println(body[0] + ": " + body[1])
+				// need to strip quotes
+				trimVal := strings.Trim(body[1], ",")
+				req.Body[strings.Trim(body[0], "\"")] = strings.Trim(trimVal, "\"")
+			}
+		}
+
+	}
+	/* for debugging, delete
+	println(req.Method)
+	for key := range req.Body {
+		println(key)
+		println(req.Body[key])
+	}
+	println(req.Body["college"])
+	println(req.Headers["Host"])
+	*/
+	// parse body (for PUT/POST)
+	//req.Body = map[string]string{"html": "<h><h>"}
 
 	return req
 }
@@ -228,7 +311,7 @@ type Request struct {
 	URI     string
 	Version string
 	Headers map[string]string
-	Body    string
+	Body    map[string]string
 }
 
 type Response struct {
