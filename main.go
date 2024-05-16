@@ -27,7 +27,8 @@ func main() {
 	//server.ListenAndServe(uint16(port), ip, 10)
 
 	sampleMap := map[server.Route]server.RouteHandler{
-		"/about": server.AboutHandler,
+		"/":      HomeHandler,
+		"/about": AboutHandler,
 	}
 	s.InitializeRoutes(&sampleMap)
 	s.ListenAndServe()
