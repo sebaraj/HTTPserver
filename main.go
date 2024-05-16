@@ -21,8 +21,16 @@ func main() {
 	ip := binary.BigEndian.Uint32(net.ParseIP(os.Getenv("IP_ADDRESS")).To4())
 	port, _ := strconv.ParseInt(os.Getenv("PORT"), 0, 16)
 	println("http server on!")
+	s := new(server.Server)
+	s.StartServer(uint16(port), ip, 10)
 
-	server.ListenAndServe(uint16(port), ip, 10)
+	//server.ListenAndServe(uint16(port), ip, 10)
+
+	sampleMap := map[server.Route]server.RouteHandler{
+		"/about": server.AboutHandler,
+	}
+	s.InitializeRoutes(&sampleMap)
+	s.ListenAndServe()
 
 	println("\nhttp server off!")
 
