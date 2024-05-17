@@ -7,6 +7,11 @@ const (
 	POST
 	PUT
 	DELETE
+	PATCH
+	OPTIONS
+	HEAD
+	TRACE
+	CONNECT
 )
 
 type HttpStatusCode uint16
@@ -37,6 +42,16 @@ func getHttpMethod(method string) HttpMethod {
 		return PUT
 	case "DELETE":
 		return DELETE
+	case "PATCH":
+		return PATCH
+	case "OPTIONS":
+		return OPTIONS
+	case "HEAD":
+		return HEAD
+	case "TRACE":
+		return TRACE
+	case "CONNECT":
+		return CONNECT
 	default:
 		return GET
 	}

@@ -22,7 +22,7 @@ type Response struct {
 	Body       string
 }
 
-func handleRequest(newFd int, routes map[Route]RouteHandler) {
+func handleRequest(newFd int, routes map[Route]RouteHandler, rtTree *RouteNode) {
 	// in the future, handle persistent connections (keep-alive). currently closing after every response (HTTP 1.0)
 	// convert this to loop to read until end, not just 10000
 	buffer := make([]byte, 10000)
@@ -40,7 +40,7 @@ func handleRequest(newFd int, routes map[Route]RouteHandler) {
 	req := parseRequest(buffer)
 	// handle route
 	//res := HandleRoute(req, routes)
-	bufferOut := parseResponse(HandleRoute(req, routes))
+	bufferOut := parseResponse(HandleRoute(req, routes, *rtTree))
 	println("sending response:")
 	for i := 0; i < len(bufferOut); i++ {
 		print(string(bufferOut[i]))

@@ -1,27 +1,37 @@
 package server
 
 import (
+	"encoding/binary"
 	"errors"
+	"net"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 
 	"github.com/bryanwsebaraj/httpserver/socket"
 )
 
 type Server struct {
-	Socket socket.Socket
-	Routes map[Route]RouteHandler
+	Socket    socket.Socket
+	Routes    map[Route]RouteHandler
+	RouteTree *RouteNode
 }
 
-func (s *Server) StartServer(port uint16, addr uint32, bcklog int) error {
+func (s *Server) StartServer(port string, addr string, bcklog int) error {
 	//sock := new(socket.Socket)
 	// Initialize initializes a socket connection using the specified address family and service.
 	// The address family is typically syscall.AF_INET for IPv4 or syscall.AF_INET6 for IPv6.
 	// The service parameter specifies the specific service or protocol to use with the socket.
 	// Returns the initialized socket connection and an error, if any.
+
 	var err error = errors.New("")
-	err = s.Socket.CreateSocket(syscall.AF_INET, syscall.SOCK_STREAM, 0, port, addr, bcklog)
+	portUint, err := strconv.ParseInt(port, 0, 16)
+	//println(portUint)
+	addrUint := binary.BigEndian.Uint32(net.ParseIP(addr).To4())
+
+	//println(addrUint)
+	err = s.Socket.CreateSocket(syscall.AF_INET, syscall.SOCK_STREAM, 0, uint16(portUint), addrUint, bcklog)
 	if err != nil {
 		println("create failed")
 		return err
@@ -39,11 +49,6 @@ func (s *Server) StartServer(port uint16, addr uint32, bcklog int) error {
 		println("listening failed")
 		return err
 	}
-	return nil
-}
-
-func (s *Server) InitializeRoutes(r *map[Route]RouteHandler) error {
-	s.Routes = *r
 	return nil
 }
 
@@ -82,7 +87,7 @@ out:
 			return err
 		}
 		//println("new connection accepted")
-		go handleRequest(newFd, s.Routes)
+		go handleRequest(newFd, s.Routes, s.RouteTree)
 
 	}
 	//sock.CloseSocket()
