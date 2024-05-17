@@ -22,6 +22,7 @@ func main() {
 		"/about/about": AboutHandler,
 		"/test/{path}": PathHandler,
 		"/favicon.ico": IconHandler,
+		"/json":        JsonExample,
 	}
 	s.InitializeRoutes(&sampleMap)
 	s.ListenAndServe()

@@ -29,7 +29,6 @@ const (
 	NotImplemented                     = 501
 	BadGateway                         = 502
 	ServiceUnavailable                 = 503
-	// Add more status codes here
 )
 
 func getHttpMethod(method string) HttpMethod {

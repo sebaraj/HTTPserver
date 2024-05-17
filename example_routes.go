@@ -34,6 +34,8 @@ func HomeHandler(req *server.Request) *server.Response {
 }
 
 func PathHandler(req *server.Request) *server.Response {
+	pathVars := server.GetPathVars(req, "/test/{path}")
+	println(pathVars)
 	return &server.Response{
 		Version:    req.Version,
 		StatusCode: server.OK,
@@ -51,6 +53,17 @@ func IconHandler(req *server.Request) *server.Response {
 		StatusText: "OK",
 		Headers:    map[string]string{"Content-Type": "text/html", "Date": time.Now().String()},
 		Body:       "<h1>Icon</h1>",
+	}
+
+}
+
+func JsonExample(req *server.Request) *server.Response {
+	return &server.Response{
+		Version:    req.Version,
+		StatusCode: server.OK,
+		StatusText: "OK",
+		Headers:    map[string]string{"Content-Type": "application/json", "Date": time.Now().String()},
+		Body:       "{\n\t\"type\": \"json\",\n\t\"message\": \"hello world\"\n}",
 	}
 
 }

@@ -19,7 +19,6 @@ type Server struct {
 }
 
 func (s *Server) StartServer(port string, addr string, bcklog int) error {
-	//sock := new(socket.Socket)
 	// Initialize initializes a socket connection using the specified address family and service.
 	// The address family is typically syscall.AF_INET for IPv4 or syscall.AF_INET6 for IPv6.
 	// The service parameter specifies the specific service or protocol to use with the socket.
@@ -27,16 +26,12 @@ func (s *Server) StartServer(port string, addr string, bcklog int) error {
 
 	var err error = errors.New("")
 	portUint, err := strconv.ParseInt(port, 0, 16)
-	//println(portUint)
 	addrUint := binary.BigEndian.Uint32(net.ParseIP(addr).To4())
-
-	//println(addrUint)
 	err = s.Socket.CreateSocket(syscall.AF_INET, syscall.SOCK_STREAM, 0, uint16(portUint), addrUint, bcklog)
 	if err != nil {
 		println("create failed")
 		return err
 	}
-	//sock.CloseSocket()
 
 	err = s.Socket.BindSocket()
 	if err != nil {
@@ -62,11 +57,9 @@ func (s *Server) ListenAndServe() error {
 	signal.Notify(done, os.Interrupt)
 
 	go func(s *Server) {
-		//println("waiting to stop")
 		<-done
 		exitFlag = true
 		s.Socket.CloseSocket()
-		//print("closed socket ctrlc")
 		return
 	}(s)
 
@@ -79,19 +72,12 @@ out:
 		newFd, _, err := s.Socket.AcceptSocket()
 		if err != nil {
 			// handle this better so it doesn't always close the socket/server unless desired
-			//println("accept failed")
-			//println(newFd)
-			//println(sock.GetFD())
 			s.Socket.CloseSocket()
-			//println("closed socket from err")
 			return err
 		}
-		//println("new connection accepted")
 		go handleRequest(newFd, s.Routes, s.RouteTree)
 
 	}
-	//sock.CloseSocket()
-	//println("closed socket at end")
 	return nil
 
 }

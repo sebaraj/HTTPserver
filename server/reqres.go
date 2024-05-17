@@ -39,7 +39,6 @@ func handleRequest(newFd int, routes map[Route]RouteHandler, rtTree *RouteNode) 
 	// parse request
 	req := parseRequest(buffer)
 	// handle route
-	//res := HandleRoute(req, routes)
 	bufferOut := parseResponse(HandleRoute(req, routes, *rtTree))
 	println("sending response:")
 	for i := 0; i < len(bufferOut); i++ {
