@@ -60,7 +60,6 @@ func (s *Server) ListenAndServe() error {
 		<-done
 		exitFlag = true
 		s.Socket.CloseSocket()
-		return
 	}(s)
 
 out:
