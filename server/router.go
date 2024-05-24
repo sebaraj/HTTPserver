@@ -42,7 +42,7 @@ func (s *Server) InitializeRoutes(r *map[Route]RouteHandler) error {
 			// first check if part is path var {}
 			if string(part[0]) == "{" && string(part[len(part)-1]) == "}" {
 				// if path var child node does not exist, create it
-				if currentNode.HasPathVarChild == false {
+				if !currentNode.HasPathVarChild {
 					currentNode.HasPathVarChild = true
 					child := new(RouteNode)
 					child.CurrPath = "PATHVARIABLE"
@@ -94,7 +94,11 @@ func HandleRoute(req *Request, routes map[Route]RouteHandler, rtTree RouteNode) 
 	for index, part := range pathParts {
 		if index == len(pathParts)-1 {
 			if currentNode.Children[part] == nil {
-				currentNode = *currentNode.Children["PATHVARIABLE"]
+				if currentNode.HasPathVarChild {
+					currentNode = *currentNode.Children["PATHVARIABLE"]
+				} else {
+					return &ResponseNotFound
+				}
 			} else {
 				currentNode = *currentNode.Children[part]
 			}
@@ -104,34 +108,20 @@ func HandleRoute(req *Request, routes map[Route]RouteHandler, rtTree RouteNode) 
 		if currentNode.Children[part] != nil {
 			currentNode = *currentNode.Children[part]
 		} else {
-			if currentNode.HasPathVarChild == true {
+			if currentNode.HasPathVarChild {
 				currentNode = *currentNode.Children["PATHVARIABLE"]
 			} else {
-				return &Response{
-					Version:    req.Version,
-					StatusCode: NotFound,
-					StatusText: "Not Found",
-					Headers:    map[string]string{"Content-Type": "text/html"},
-					Body:       "<h1>404 Not Found</h1>",
-				}
+				return &ResponseNotFound
 			}
 		}
 
 	}
 	handler := currentNode.HandlerFunc
 	if handler == nil {
-		return &Response{
-			Version:    req.Version,
-			StatusCode: NotFound,
-			StatusText: "Not Found",
-			Headers:    map[string]string{"Content-Type": "text/html"},
-			Body:       "<h1>404 Not Found</h1>",
-		}
+		return &ResponseNotFound
 	}
 	return handler(req)
 }
-
-// prepopulate bad return responses to call in handlers
 
 func GetPathVars(req *Request, path string) PathVars {
 	pathVars := make(map[string]string)

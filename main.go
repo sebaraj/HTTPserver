@@ -15,7 +15,7 @@ func main() {
 	}
 	println("http server on!")
 	s := new(server.Server)
-	s.StartServer(os.Getenv("PORT"), os.Getenv("IP_ADDRESS"), 10)
+	s.StartServer(os.Getenv("SERVER_PORT"), os.Getenv("SERVER_IP"), 10)
 
 	sampleMap := map[server.Route]server.RouteHandler{
 		"/":            HomeHandler,

@@ -7,6 +7,7 @@ import (
 )
 
 func AboutHandler(req *server.Request) *server.Response {
+	println(req.AsString())
 	return &server.Response{
 		Version:    req.Version,
 		StatusCode: server.OK,
