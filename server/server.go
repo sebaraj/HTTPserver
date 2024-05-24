@@ -80,6 +80,7 @@ out:
 			s.Socket.CloseSocket()
 			return err
 		}
+		syscall.SetNonblock(newFd, true)
 		go handleRequest(newFd, s.Routes, s.RouteTree)
 
 	}
