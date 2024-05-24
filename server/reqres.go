@@ -95,37 +95,43 @@ func handleRequest(newFd int, routes map[Route]RouteHandler, rtTree *RouteNode) 
 	buffer := make([]byte, 10000)
 	// while has time, try read. if read == 0 and time out, close connection
 	valread := 0
+	syscall.SetNonblock(newFd, true)
 	err := error(nil)
 	timeOut := time.Now().Add(5 * time.Second)
 	for time.Now().Before(timeOut) {
 		println("trying read before timeout")
+		//syscall.Write(newFd, []byte("$"))
+		//buffer = buffer[:10000]
 		valread, err = syscall.Read(newFd, buffer) // is this nonblocking? this might be blocking https://stackoverflow.com/questions/36112445/will-go-block-the-current-thread-when-doing-i-o-inside-a-goroutine
-		println("valread: ", valread)
-		if err != nil {
-			println("read failed")
-			return //err
-		} else if valread > 0 {
+		//println("valread: ", valread)
+		//println("err: ", err)
+
+		//if err != nil {
+		//	println("read failed")
+		//	return //err
+		//} else
+		if valread > 0 {
 			break
 		}
 		time.Sleep(1 * time.Second)
 	}
-	if valread == 0 {
+	if valread == -1 || valread == 0 {
 		println("timeout")
 		syscall.Close(newFd)
 		return
 	}
 	//valread, err := syscall.Read(newFd, buffer)
-	//if err != nil {
-	//	println("read failed")
-	//	return //err
-	//}
+	if err != nil {
+		println("read failed")
+		//	return //err
+	}
 	println("receiving request:")
 	for i := 0; i < valread; i++ {
 		print(string(buffer[i]))
 	}
 
 	// parse request
-	req := parseRequest(buffer)
+	req := parseRequest(buffer[1:valread])
 	res := new(Response)
 	if req.Headers["Connection"] == "close" || (req.Headers["Connection"] != "keep-alive" && req.Version == "HTTP/1.0") {
 		res = HandleRoute(req, routes, *rtTree)
@@ -134,9 +140,9 @@ func handleRequest(newFd int, routes map[Route]RouteHandler, rtTree *RouteNode) 
 		}
 		bufferOut := parseResponse(res)
 		println("sending response:")
-		for i := 0; i < len(bufferOut); i++ {
-			print(string(bufferOut[i]))
-		}
+		//for i := 0; i < len(bufferOut); i++ {
+		//	print(string(bufferOut[i]))
+		//}
 		syscall.Write(newFd, bufferOut)
 		syscall.Close(newFd)
 	} else {
@@ -146,13 +152,13 @@ func handleRequest(newFd int, routes map[Route]RouteHandler, rtTree *RouteNode) 
 		res = HandleRoute(req, routes, *rtTree)
 		if int(int(res.StatusCode)/100) != 1 {
 			res.Headers["Connection"] = "keep-alive"
-			print("added connection header: ")
+			println("added keep-alive connection header: ")
 		}
 		bufferOut := parseResponse(res)
 		println("sending response:")
-		for i := 0; i < len(bufferOut); i++ {
-			print(string(bufferOut[i]))
-		}
+		//for i := 0; i < len(bufferOut); i++ {
+		//	print(string(bufferOut[i]))
+		//}
 		syscall.Write(newFd, bufferOut)
 		handleRequest(newFd, routes, rtTree)
 		//syscall.Close(newFd)
@@ -197,7 +203,7 @@ func parseRequest(buffer []byte) *Request {
 }
 
 func parseResponse(res *Response) []byte {
-	// res.Version is being a little buggy, so hardcoding for now (all responses are HTTP/1.1ish anyways)
+	// res.Version hardcoded for now (all responses are HTTP/1.1ish anyways)
 	headersString := ""
 	for key, value := range res.Headers {
 		headersString += key + ": " + value + "\n"

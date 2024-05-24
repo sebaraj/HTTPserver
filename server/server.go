@@ -12,6 +12,8 @@ import (
 	"github.com/bryanwsebaraj/httpserver/socket"
 )
 
+// GOMAXPROCS is set to number of CPU cores available by default
+
 type Server struct {
 	Socket    socket.Socket
 	Routes    map[Route]RouteHandler
@@ -26,6 +28,10 @@ func (s *Server) StartServer(port string, addr string, bcklog int) error {
 
 	var err error = errors.New("")
 	portUint, err := strconv.ParseInt(port, 0, 16)
+	if err != nil {
+		println("port conversion failed")
+		return err
+	}
 	addrUint := binary.BigEndian.Uint32(net.ParseIP(addr).To4())
 	err = s.Socket.CreateSocket(syscall.AF_INET, syscall.SOCK_STREAM, 0, uint16(portUint), addrUint, bcklog)
 	if err != nil {
