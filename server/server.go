@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"syscall"
 
-	"github.com/bryanwsebaraj/httpserver/socket"
+	"github.com/sebaraj/httpserver/socket"
 )
 
 // GOMAXPROCS is set to number of CPU cores available by default
@@ -85,5 +85,4 @@ out:
 
 	}
 	return nil
-
 }

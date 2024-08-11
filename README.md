@@ -1,23 +1,24 @@
-to-do
+# HTTP Server
 
-handle path variables in router - done 
+A simple HTTP 1.1(ish) server written in Go, constructed from RFC 9112 without referencing other implementations. While functional, this is neither a production-ready, nor complete implementation of the HTTP 1.1 protocol.
 
-helper function to get path variables in handler - done
+### To-do
 
-helper function to easily print server.Request and predefined server.Response structs to return on error - done
+- [x] Process path variables in router
 
-handle all carriage returns (/r) in hashtables - done 
+- [x] Debugging functions to print server.Request and server.Response structs to return on error
 
-basic persistent/closed connections - done
+- [x] Handle all carriage returns (/r) in hashtable
 
-handle more errors for system resiliency - done
+- [x] Handle basic persistent/closed connections
 
-add documentation in pkg.go.dev (need tagged/stable version)
+- [x] Handle more errors for system resiliency
 
-add debug mode 
+- [ ] Add documentation in pkg.go.dev (need tagged/stable version)
 
-persistent connections/chunked transfer, as specified in HTTP 1.1 (race condition > 408 request timeout) and full HTTP 1.1 (host field, options method, caching support, 100 continue status)
+- [ ] Full persistent connections/chunked transfer, as specified in HTTP 1.1 (race condition > 408 request timeout) and full HTTP 1.1 (options method, caching support, 100 continue status)
 
-handle query parameters in router
+- [ ] Handle query parameters in router
 
-limit number of open connections from a single client (characteristic of denial of service)
+- [ ] Limit number of open connections from a single client (characteristic of denial of service)
+
